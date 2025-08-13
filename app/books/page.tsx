@@ -1,0 +1,10 @@
+import Page from '@/components/layouts/books/page'
+import React from 'react'
+
+export default function page() {
+  return (
+    <div>
+      <Page />
+    </div>
+  )
+}
