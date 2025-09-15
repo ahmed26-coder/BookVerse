@@ -1,13 +1,20 @@
 import React from 'react'
-import { HeroSection } from './home.chunks'
-import { FeaturedBooks, SearchSection } from './home.client'
+import { HeroSection, WhyReadBooks } from './home.chunks'
+import CategoryBook, { FeaturedBooks, NewsletterSection, SearchSection } from './home.client'
 
 export default function page() {
   return (
     <div>
       <HeroSection />
       <SearchSection />
-      <FeaturedBooks />
+      <div className=" bg-muted/70">
+        <FeaturedBooks />
+      </div>
+      <div className=" bg-background">
+        <CategoryBook />
+      </div>
+      <WhyReadBooks />
+      <NewsletterSection />
     </div>
   )
 }

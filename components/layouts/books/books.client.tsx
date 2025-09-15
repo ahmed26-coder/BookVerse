@@ -22,17 +22,18 @@ export function BooksContent() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [totalResults, setTotalResults] = useState(0)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [hasMore, setHasMore] = useState(false)
+  const [, setHasMore] = useState(false)
 
   const searchParams = useSearchParams()
   const router = useRouter()
 
+  // read query params
   const query = searchParams.get("q") || ""
   const subject = searchParams.get("subject") || ""
   const author = searchParams.get("author") || ""
   const language = searchParams.get("language") || ""
   const publishYear = searchParams.get("publish_year") || ""
+  const pageParam = Math.max(1, Number(searchParams.get("page") || "1"))
 
   const filters: Filters = {
     ...(author && { author }),
@@ -43,26 +44,23 @@ export function BooksContent() {
 
   const searchQuery = query || subject || "popular books"
 
-  useEffect(() => {
-    setCurrentPage(1)
-    fetchBooks(1, true)
-  }, [query, subject, author, language, publishYear])
+  // current page state synced with URL (pageParam)
+  const [currentPage, setCurrentPage] = useState<number>(pageParam)
 
-  const fetchBooks = async (page: number, reset = false) => {
+  // fetch function
+  const fetchBooks = async (page: number) => {
     setLoading(true)
     setError(null)
 
     try {
       const response: SearchResponse = await searchBooks(searchQuery, page, 20, filters)
 
-      if (reset) {
-        setBooks(response.docs)
-      } else {
-        setBooks((prev) => [...prev, ...response.docs])
-      }
-
+      // In pagination we replace results with the page requested
+      setBooks(response.docs)
       setTotalResults(response.numFound)
-      setHasMore(response.docs.length === 20 && books.length + response.docs.length < response.numFound)
+
+      const totalPages = Math.max(1, Math.ceil(response.numFound / 20))
+      setHasMore(page < totalPages)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to search books. Please try again."
       setError(errorMessage)
@@ -71,11 +69,13 @@ export function BooksContent() {
     }
   }
 
-  const handleLoadMore = () => {
-    const nextPage = currentPage + 1
-    setCurrentPage(nextPage)
-    fetchBooks(nextPage, false)
-  }
+  // Sync when query/filters/pageParam change
+  useEffect(() => {
+    setCurrentPage(pageParam)
+    fetchBooks(pageParam)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, subject, author, language, publishYear, pageParam])
 
   const handleSearch = (newQuery: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -84,11 +84,11 @@ export function BooksContent() {
     } else {
       params.delete("q")
     }
-    // Clear other params when doing a new search
     params.delete("subject")
     params.delete("author")
     params.delete("language")
     params.delete("publish_year")
+    params.delete("page")
     router.push(`/books?${params.toString()}`)
   }
 
@@ -107,7 +107,35 @@ export function BooksContent() {
   }
 
   const retrySearch = () => {
-    fetchBooks(1, true)
+    fetchBooks(currentPage)
+  }
+
+  const goToPage = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (page <= 1) {
+      params.delete("page")
+    } else {
+      params.set("page", String(page))
+    }
+    router.push(`/books?${params.toString()}`)
+  }
+
+  const totalPages = Math.max(1, Math.ceil(totalResults / 20))
+
+  const getPagesToShow = (): (number | string)[] => {
+    const pages: (number | string)[] = []
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i)
+    } else {
+      pages.push(1)
+      const start = Math.max(2, currentPage - 2)
+      const end = Math.min(totalPages - 1, currentPage + 2)
+      if (start > 2) pages.push("...")
+      for (let i = start; i <= end; i++) pages.push(i)
+      if (end < totalPages - 1) pages.push("...")
+      pages.push(totalPages)
+    }
+    return pages
   }
 
   if (error) {
@@ -173,26 +201,50 @@ export function BooksContent() {
             ))}
           </div>
 
-          {/* Load More */}
-          {hasMore && (
-            <div className="text-center pt-8">
-              <Button onClick={handleLoadMore} disabled={loading} size="lg">
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Loading...
-                  </>
-                ) : (
-                  "Load More Books"
-                )}
+          {/* Pagination */}
+          <div className="pt-8 flex flex-col items-center gap-4">
+            <nav aria-label="Pagination" className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage <= 1 || loading}
+              >
+                Previous
               </Button>
-            </div>
-          )}
+
+              {getPagesToShow().map((p, i) =>
+                typeof p === "string" ? (
+                  <span key={`dots-${i}`} className="px-2 text-sm text-muted-foreground">
+                    {p}
+                  </span>
+                ) : (
+                  <Button
+                    key={p}
+                    variant={p === currentPage ? undefined : "ghost"}
+                    size="sm"
+                    onClick={() => goToPage(p)}
+                    className={p === currentPage ? "bg-primary text-background border" : ""}
+                    aria-current={p === currentPage ? "page" : undefined}
+                    disabled={loading}
+                  >
+                    {p}
+                  </Button>
+                )
+              )}
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage >= totalPages || loading}
+              >
+                Next
+              </Button>
+            </nav>
+          </div>
         </>
       )}
     </div>
   )
 }
-
-
-

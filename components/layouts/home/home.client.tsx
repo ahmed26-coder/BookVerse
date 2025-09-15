@@ -1,44 +1,109 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
-import { Search, BookOpen, Users, Calendar } from "lucide-react"
-import { POPULAR_SUBJECTS } from "@/lib/api"
+import { Search, Calendar } from "lucide-react"
+import { useEffect } from "react"
+import { Badge } from "@/components/ui/badge"
+import { Star, User, AlertCircle, RefreshCw } from "lucide-react"
+import Link from "next/link"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"
+import { searchBooks, getCoverUrl, formatAuthors, formatPublishYear } from "@/lib/api"
+import Image from "next/image"
+import Millions from "./home.chunks"
+import { CategoryBooks } from "./categorybooks"
+
+const POPULAR_SUBJECTS = ["Science", "History", "Romance", "Technology", "Art", "Fiction", "Fantasy", "Biography", "Poetry", "Travel", "Health", "Business"]
+const POPULAR_SUBJECT = ["Science", "History", "Romance", "Technology", "Fiction"]
+
 
 export function SearchSection() {
   const [searchQuery, setSearchQuery] = useState("")
-  const router = useRouter()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [results, setResults] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [open, setOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement | null>(null)
 
-  const handleSearch = (e: React.FormEvent) => {
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
-      router.push(`/books?q=${encodeURIComponent(searchQuery.trim())}`)
+      setLoading(true)
+      try {
+        const res = await fetch(
+          `https://openlibrary.org/search.json?q=${encodeURIComponent(searchQuery.trim())}`
+        )
+        const data = await res.json()
+        setResults(data.docs.slice(0, 12))
+        setOpen(true)
+      } catch (error) {
+        console.error("Search error:", error)
+      } finally {
+        setLoading(false)
+      }
     }
   }
 
-  const handleSubjectClick = (subject: string) => {
-    router.push(`/books?subject=${encodeURIComponent(subject)}`)
+  const handleSubjectClick = async (subject: string) => {
+    setLoading(true)
+    try {
+      const res = await fetch(
+        `https://openlibrary.org/subjects/${encodeURIComponent(subject.toLowerCase())}.json?limit=12`
+      )
+      const data = await res.json()
+      setResults(data.works || [])
+      setOpen(true)
+    } catch (error) {
+      console.error("Subject error:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getBookCover = (book: any) => {
+    if (book.cover_i) {
+      return `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg`
+    }
+    if (book.cover_id) {
+      return `https://covers.openlibrary.org/b/id/${book.cover_id}-M.jpg`
+    }
+    return "/no-cover.png"
   }
 
   return (
-    <section id="search" className="py-16 lg:py-24 bg-background">
+    <section id="search" className="py-16 lg:pb-16 relative">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="font-serif font-bold text-3xl lg:text-4xl text-foreground mb-4">Find Your Perfect Book</h2>
+          <h2 className="font-serif font-bold text-3xl lg:text-4xl text-foreground mb-4">
+            Find Your Perfect Book
+          </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Search through millions of books or explore popular categories to discover something new.
           </p>
         </div>
-
-        {/* Search Form */}
-        <Card className="max-w-2xl mx-auto mb-12">
-          <CardContent className="p-6">
-            <form onSubmit={handleSearch} className="flex gap-2">
+        <Card className="max-w-2xl mx-auto mb-12 py-0 relative z-50">
+          <CardContent className="p-6" ref={dropdownRef}>
+            <form onSubmit={handleSearch} className="flex gap-2 items-center">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
@@ -49,58 +114,81 @@ export function SearchSection() {
                   className="pl-10 text-base"
                 />
               </div>
-              <Button type="submit" size="lg">
+              <Button className="hover:bg-red-700 w-fit" type="submit">
                 Search
               </Button>
             </form>
+            {open && (
+              <div className="absolute top-full left-0 w-full bg-white border rounded-lg shadow-lg mt-2 max-h-[500px] overflow-y-auto z-50 p-4">
+                {!loading && results.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {results.map((book, idx) => (
+                      <Link
+                        key={idx}
+                        href={`/books/${book.key.replace("/works/", "")}`}
+                        className="group"
+                      >
+                        <div className="cursor-pointer rounded-lg border bg-white hover:shadow-lg hover:border-primary transition-transform transform hover:scale-105 p-3 flex flex-col items-center">
+                            {book.ratings_average && (
+                              <Badge className="absolute top-2 right-2 bg-accent text-accent-foreground">
+                                <Star className="h-3 w-3 mr-1" />
+                                {book.ratings_average.toFixed(1)}
+                              </Badge>
+                            )}
+                            {book.cover_i ? (
+                              <Image
+                                src={getBookCover(book)}
+                                alt={book.title}
+                                width={150}
+                                height={220}
+                                className="w-full h-[160px] object-cover rounded-md"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <Image
+                                src="/book.webp"
+                                alt=""
+                                width={150}
+                                height={220}
+                                className="w-full h-[160px] object-cover rounded-md"
+                                loading="lazy"
+                              />
+                            )}
+                          </div>
+                          <p className="mt-3 text-sm font-medium text-center text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                            {book.title}
+                          </p>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  !loading && (
+                    <p className="text-center text-muted-foreground">No results found</p>
+                  )
+                )}
+              </div>
+
+            )}
           </CardContent>
         </Card>
-
-        {/* Popular Categories */}
-        <div className="text-center mb-8">
-          <h3 className="font-serif font-semibold text-xl text-foreground mb-6">Popular Categories</h3>
-          <div className="flex flex-wrap justify-center gap-2 max-w-4xl mx-auto">
+        <Millions />
+        <div className="text-center mb-8 mt-10">
+          <h3 className="font-serif font-semibold text-xl text-foreground mb-6">
+            Popular Categories
+          </h3>
+          <div className="flex flex-wrap justify-center gap-2 max-w-3xl mx-auto">
             {POPULAR_SUBJECTS.slice(0, 12).map((subject) => (
               <Button
                 key={subject}
                 variant="outline"
                 size="sm"
                 onClick={() => handleSubjectClick(subject)}
-                className="hover:bg-primary hover:text-primary-foreground transition-colors"
+                className="hover:bg-gray-100 transition-colors"
               >
                 {subject}
               </Button>
             ))}
           </div>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mt-16">
-          <Card className="text-center">
-            <CardContent className="p-6">
-              <BookOpen className="h-8 w-8 text-primary mx-auto mb-3" />
-              <h4 className="font-serif font-semibold text-lg mb-2">Millions of Books</h4>
-              <p className="text-muted-foreground text-sm">
-                Access to a vast collection of books from around the world
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="p-6">
-              <Users className="h-8 w-8 text-primary mx-auto mb-3" />
-              <h4 className="font-serif font-semibold text-lg mb-2">Diverse Authors</h4>
-              <p className="text-muted-foreground text-sm">
-                Discover works from authors across all genres and time periods
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="p-6">
-              <Calendar className="h-8 w-8 text-primary mx-auto mb-3" />
-              <h4 className="font-serif font-semibold text-lg mb-2">Always Updated</h4>
-              <p className="text-muted-foreground text-sm">Fresh content and new releases added regularly</p>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </section>
@@ -108,12 +196,17 @@ export function SearchSection() {
 }
 
 
-import { useEffect } from "react"
-import { Badge } from "@/components/ui/badge"
-import { Star, User, AlertCircle, RefreshCw } from "lucide-react"
-import Link from "next/link"
-import { searchBooks, getCoverUrl, formatAuthors, formatPublishYear, type Book } from "@/lib/api"
-import Image from "next/image"
+
+
+
+type Book = {
+  key: string
+  title: string
+  cover_i?: number
+  ratings_average?: number
+  author_name?: string[]
+  first_publish_year?: number
+}
 
 export function FeaturedBooks() {
   const [featuredBooks, setFeaturedBooks] = useState<Book[]>([])
@@ -128,7 +221,6 @@ export function FeaturedBooks() {
     try {
       setLoading(true)
       setError(null)
-      // Fetch some popular/featured books
       const queries = ["bestseller", "classic literature", "science fiction"]
       const allBooks: Book[] = []
 
@@ -136,11 +228,9 @@ export function FeaturedBooks() {
         const response = await searchBooks(query, 1, 4)
         allBooks.push(...response.docs.filter((book) => book.cover_i))
       }
-
-      // Remove duplicates and take first 6 books with covers
       const uniqueBooks = allBooks
         .filter((book, index, self) => index === self.findIndex((b) => b.key === book.key))
-        .slice(0, 6)
+        .slice(0, 12)
 
       setFeaturedBooks(uniqueBooks)
     } catch (err) {
@@ -153,18 +243,18 @@ export function FeaturedBooks() {
 
   if (loading) {
     return (
-      <section className="py-16 lg:py-24 bg-muted/30" aria-label="Featured books loading">
+      <section className="py-16 lg:py-24" aria-label="Featured books loading">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="font-serif font-bold text-3xl lg:text-4xl text-foreground mb-4">Featured Books</h2>
           </div>
           <div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
             role="status"
             aria-label="Loading featured books"
           >
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i} className="animate-pulse py-0">
                 <CardContent className="p-6">
                   <div className="bg-muted h-48 rounded-lg mb-4" aria-hidden="true"></div>
                   <div className="bg-muted h-4 rounded mb-2" aria-hidden="true"></div>
@@ -200,8 +290,8 @@ export function FeaturedBooks() {
   }
 
   return (
-    <section className="py-16 lg:py-24 bg-muted/30" aria-label="Featured books">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-16 max-w-7xl mx-auto lg:py-16 bg-muted/30" aria-label="Featured books">
+      <div className="container px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="font-serif font-bold text-3xl lg:text-4xl text-foreground mb-4">Featured Books</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -209,60 +299,143 @@ export function FeaturedBooks() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {featuredBooks.map((book) => (
-            <Card key={book.key} className="group  hover:shadow-lg transition-shadow duration-300">
-              <CardContent className="">
-                <div className="w-full h-100 mb-4 rounded-md relative overflow-hidden">
-                  {book.cover_i && (
-                    <Image
-                      src={getCoverUrl(book.cover_i, "M") || "/placeholder.svg"}
-                      alt={`Cover of ${book.title}`}
-                      fill
-                      className="object-cover"
-                      loading="lazy"
-                    />
-                  )}
-                  {book.ratings_average && (
-                    <Badge className="absolute top-2 right-2 bg-accent text-accent-foreground">
-                      <Star className="h-3 w-3 mr-1" />
-                      {book.ratings_average.toFixed(1)}
-                    </Badge>
-                  )}
-                </div>
-
-                <h3 className="font-serif font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-                  {book.title}
-                </h3>
-
-                <div className="space-y-2 text-sm text-muted-foreground mb-4">
-                  {book.author_name && (
-                    <div className="flex items-center gap-1">
-                      <User className="h-3 w-3" aria-hidden="true" />
-                      <span>{formatAuthors(book.author_name)}</span>
+        <Carousel className="mb-8">
+          <CarouselContent>
+            {featuredBooks.map((book) => (
+              <CarouselItem key={book.key} className="sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                <Card className="group py-0 hover:shadow-lg transition-shadow duration-300">
+                  <CardContent className="px-0">
+                    <div className="w-full h-90 mb-4 rounded-t-md relative overflow-hidden">
+                      {book.ratings_average && (
+                        <Badge className="absolute top-2 right-2 bg-accent text-accent-foreground">
+                          <Star className="h-3 w-3 mr-1" />
+                          {book.ratings_average.toFixed(1)}
+                        </Badge>
+                      )}
+                      {book.cover_i ? (
+                        <Image
+                          src={getCoverUrl(book.cover_i, "M") || "/book.webp"}
+                          alt={`Cover of ${book.title} by ${formatAuthors(book.author_name)}`}
+                          width={350}
+                          height={400}
+                          className="object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <Image
+                          src="/book.webp"
+                          alt=""
+                          width={350}
+                          height={400}
+                          className="object-cover"
+                          loading="lazy"
+                        />
+                      )}
                     </div>
-                  )}
-                  {book.first_publish_year && (
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" aria-hidden="true" />
-                      <span>{formatPublishYear(book.first_publish_year)}</span>
-                    </div>
-                  )}
-                </div>
+                    <div className="px-4 pb-5">
+                      <h3 className="font-serif font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors">
+                        {book.title}
+                      </h3>
 
-                <Button asChild variant="outline" className="w-full bg-transparent hover:text-white">
-                  <Link href={`/books/${book.key.replace("/works/", "")}`}>View Details</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                      <div className="text-sm text-muted-foreground mb-4">
+                        {book.author_name && (
+                          <div className="flex space-y-1 items-center font-medium gap-1">
+                            <User className="h-4 w-4" aria-hidden="true" />
+                            <span className="line-clamp-1">{formatAuthors(book.author_name)}</span>
+                          </div>
+                        )}
+                        {book.first_publish_year && (
+                          <div className="flex items-center font-medium gap-1">
+                            <Calendar className="h-4 w-4" aria-hidden="true" />
+                            <span>{formatPublishYear(book.first_publish_year)}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <Button asChild variant="outline" className="w-full bg-transparent cursor-pointer hover:bg-gray-50">
+                        <Link href={`/books/${book.key.replace("/works/", "")}`}>View Details</Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious />
+          <CarouselNext />
+        </Carousel>
 
         <div className="text-center">
-          <Button asChild size="lg">
+          <Button asChild size="lg" className="hover:bg-red-700 cursor-pointer">
             <Link href="/books">View All Books</Link>
           </Button>
         </div>
+      </div>
+    </section>
+  )
+}
+
+
+
+export default function CategoryBook() {
+  return (
+    <div>
+      {POPULAR_SUBJECT.map((subject) => (
+        <CategoryBooks key={subject} subject={subject} />
+      ))}
+    </div>
+  )
+}
+
+
+
+import { Mail } from "lucide-react"
+import { toast } from "sonner"
+import { FormEvent } from "react"
+
+export function NewsletterSection() {
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setLoading(true)
+
+    setTimeout(() => {
+      setLoading(false)
+      toast.success("You’ve successfully subscribed to our newsletter!")
+    }, 1000)
+  }
+
+  return (
+    <section className="pb-10 max-w-7xl mx-auto bg-background">
+      <div className="container px-4 sm:px-6 lg:px-8 text-center">
+        <Mail className="h-12 w-12 text-primary mx-auto mb-4" />
+        <h2 className="font-serif font-bold text-3xl lg:text-4xl mb-4 text-foreground">
+          Join Our Community
+        </h2>
+        <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
+          Stay updated with the latest books, insights, and inspiring stories.
+          Subscribe to our newsletter today!
+        </p>
+
+        <form
+          onSubmit={handleSubmit}
+          className="max-w-md mx-auto flex flex-col sm:flex-row gap-4"
+        >
+          <Input
+            type="email"
+            placeholder="Enter your email"
+            className="flex-1"
+            required
+          />
+          <Button
+            type="submit"
+            className="hover:bg-red-700"
+            disabled={loading}
+          >
+            {loading ? "Subscribing..." : "Subscribe"}
+          </Button>
+        </form>
       </div>
     </section>
   )

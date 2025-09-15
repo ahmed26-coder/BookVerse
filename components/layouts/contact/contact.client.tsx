@@ -23,11 +23,7 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
-
-    // محاكاة الإرسال
     await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    // إعادة تعيين البيانات
     setFormData({
       name: "",
       email: "",
@@ -37,8 +33,6 @@ export default function ContactPage() {
     })
 
     setIsSubmitting(false)
-
-    // عرض إشعار النجاح
     toast.success("Your message has been sent successfully!")
   }
 
@@ -53,8 +47,7 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
+      <main className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-12">
           <h1 className="font-serif font-bold text-4xl lg:text-5xl text-foreground mb-4">Get in Touch</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -149,7 +142,6 @@ export default function ContactPage() {
             </Card>
           </div>
 
-          {/* Contact Info */}
           <div className="space-y-6">
             <Card>
               <CardContent >

@@ -3,6 +3,7 @@ import { Work_Sans, Open_Sans } from "next/font/google"
 import "./globals.css";
 import { Navigation } from "@/components/navigation";
 import { Toaster } from "sonner";
+import Footer from "@/components/footer";
 
 const workSans = Work_Sans({
   subsets: ["latin"],
@@ -38,6 +39,7 @@ export default function RootLayout({
         <Navigation />
         {children}
         <Toaster richColors position="top-center" />
+        <Footer />
       </body>
     </html>
   );

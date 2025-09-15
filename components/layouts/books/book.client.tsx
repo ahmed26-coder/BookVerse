@@ -16,6 +16,7 @@ import {
   ExternalLink,
   Heart,
   Share2,
+  Star,
 } from "lucide-react"
 import { getBookDetails, getCoverUrl, formatAuthors, getBookDescription, type BookDetails } from "@/lib/api"
 import Image from "next/image"
@@ -134,43 +135,66 @@ export function BookDetailsContent({ bookId }: BookDetailsContentProps) {
       {/* Main Book Details */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Book Cover */}
-        <div className="lg:col-span-1">
-          <Card className="sticky top-8">
-            <CardContent className="p-6">
-              {book.cover_i ? (
-                <div className="relative w-full h-96 rounded-lg overflow-hidden shadow-lg">
-                  <Image
-                    src={getCoverUrl(book.cover_i, "L")}
-                    alt={`Cover of ${book.title}`}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="w-full h-96 bg-muted rounded-lg flex items-center justify-center">
-                  <BookOpen className="h-16 w-16 text-muted-foreground" />
-                </div>
-              )}
+       <div className="lg:col-span-1">
+  <Card className="sticky top-8 shadow-lg py-0 rounded-2xl overflow-hidden">
+    <CardContent className="p-0 relative">
+      {/* Book Cover */}
+      <div className="relative w-full h-150 bg-muted">
+        {book.cover_i ? (
+          <Image
+            src={getCoverUrl(book.cover_i, "M") || "/book.webp"}
+            alt={`Cover of ${book.title} by ${formatAuthors(book.author_name)}`}
+            fill
+            className="object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <Image
+            src="/book.webp"
+            alt="No cover available"
+            fill
+            className="object-cover"
+            loading="lazy"
+          />
+        )}
 
-              {/* Action Buttons */}
-              <div className="flex gap-2 mt-4">
-                <Button
-                  variant={isFavorite ? "default" : "outline"}
-                  onClick={toggleFavorite}
-                  className="flex-1"
-                >
-                  <Heart
-                    className={`h-4 w-4 mr-2 ${isFavorite ? "fill-current" : ""}`}
-                  />
-                  {isFavorite ? "Favorited" : "Add to Favorites"}
-                </Button>
-                <Button variant="outline" size="icon" onClick={handleShare}>
-                  <Share2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Rating Badge */}
+        {book.ratings_average && (
+          <Badge className="absolute top-3 right-3 bg-accent text-accent-foreground shadow-md px-2 py-1 text-xs">
+            <Star className="h-3 w-3 mr-1" aria-hidden="true" />
+            <span aria-label={`Rating: ${book.ratings_average.toFixed(1)} out of 5 stars`}>
+              {book.ratings_average.toFixed(1)}
+            </span>
+          </Badge>
+        )}
+      </div>
+
+      {/* Action Buttons */}
+      <div className="p-4 flex flex-col sm:flex-row gap-3">
+        <Button
+          variant={isFavorite ? "default" : "outline"}
+          onClick={toggleFavorite}
+          className="flex-1 hover:bg-gray-100"
+        >
+          <Heart
+            className={`h-4 w-4 mr-2 ${isFavorite ? "fill-current text-white" : ""}`}
+          />
+          {isFavorite ? "Favorited" : "Add to Favorites"}
+        </Button>
+
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={handleShare}
+          className=" hover:bg-gray-100"
+        >
+          <Share2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </CardContent>
+  </Card>
+</div>
+
 
         {/* Book Information */}
         <div className="lg:col-span-2 space-y-6">
@@ -282,7 +306,7 @@ export function BookDetailsContent({ bookId }: BookDetailsContentProps) {
                     href={`https://openlibrary.org${book.key}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 hover:bg-gray-100"
                   >
                     <ExternalLink className="h-4 w-4" />
                     Open Library
