@@ -114,7 +114,7 @@ export function CategoryBooks({ subject }: { subject: string }) {
           </p>
         </div>
 
-        <Carousel className=" max-w-2xs md:max-w-7xl mx-auto">
+        <Carousel className=" max-w-2xs md:max-w-[1350px] mx-auto">
           <CarouselContent>
             {books.map((book) => (
               <CarouselItem key={book.key} className="sm:basis-1/2 lg:basis-1/3 xl:basis-1/4 py-4">
