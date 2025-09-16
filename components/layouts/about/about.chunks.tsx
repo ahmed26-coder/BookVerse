@@ -75,7 +75,7 @@ export function Story() {
   return (
     <>
       <div className=" max-w-7xl mx-auto container">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 my-10">
+        <div className="grid grid-cols-1 px-5 md:px-0 md:grid-cols-2 lg:grid-cols-3 gap-6 my-10">
           {features.map((feature) => (
             <Card
               key={feature.title}
@@ -91,7 +91,7 @@ export function Story() {
         </div>
       </div>
       <div className=" max-w-7xl mx-auto container">
-        <Card className="mb-12 shadow-lg">
+        <Card className="mb-12 md:shadow-lg border-none md:border">
           <CardContent className="">
             <div className="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-8">
               {/* النص */}
@@ -138,7 +138,7 @@ export function Story() {
         <p className="text-lg text-muted-foreground mb-6">
           Join thousands of readers who have already discovered their next favorite book.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col px-5 md:px-0 sm:flex-row gap-4 justify-center">
           <Button asChild size="lg" className=" hover:bg-red-700">
             <Link href="/books">Browse Books</Link>
           </Button>

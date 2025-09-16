@@ -290,7 +290,7 @@ export function FeaturedBooks() {
   }
 
   return (
-    <section className="py-16 max-w-7xl mx-auto lg:py-16 bg-muted/30" aria-label="Featured books">
+    <section className="py-8 max-w-7xl mx-auto lg:py-16 bg-muted/30" aria-label="Featured books">
       <div className="container px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="font-serif font-bold text-3xl lg:text-4xl text-foreground mb-4">Featured Books</h2>
@@ -299,7 +299,7 @@ export function FeaturedBooks() {
           </p>
         </div>
 
-        <Carousel className="mb-8">
+        <Carousel className="mb-8 max-w-2xs mx-auto ">
           <CarouselContent>
             {featuredBooks.map((book) => (
               <CarouselItem key={book.key} className="sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">

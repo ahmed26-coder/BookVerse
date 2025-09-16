@@ -32,7 +32,7 @@ export default function Footer() {
     return (
         <footer className="bg-background border-t border-border mt-16">
             <div className="container px-4 sm:px-6 lg:px-8 pb-3 pt-5 max-w-7xl mx-auto">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div className="grid grid-cols-2 items-center md:grid-cols-4 gap-8">
                     {/* Logo + وصف */}
                     <div className="md:col-span-1">
                         <Link href="/" className="flex items-center gap-3">

@@ -84,6 +84,7 @@ export function Navigation() {
               aria-label={isMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={isMenuOpen}
               aria-controls="mobile-menu"
+              className=" hover:bg-gray-100 border rounded-md"
             >
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
@@ -107,7 +108,7 @@ export function Navigation() {
                     href={item.href}
                     className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
                       isActive
-                        ? "text-primary bg-accent"
+                        ? "text-primary"
                         : "text-foreground hover:text-primary"
                     }`}
                     onClick={() => setIsMenuOpen(false)}

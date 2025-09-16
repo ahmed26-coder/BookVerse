@@ -39,7 +39,7 @@ export function CategoryBooks({ subject }: { subject: string }) {
 
   useEffect(() => {
     fetchBooks()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subject])
 
   const fetchBooks = async () => {
@@ -103,7 +103,7 @@ export function CategoryBooks({ subject }: { subject: string }) {
   }
 
   return (
-    <section className="py-16 max-w-7xl mx-auto lg:py-8" aria-label={`${subject} books`}>
+    <section className="py-8 max-w-7xl mx-auto lg:py-8" aria-label={`${subject} books`}>
       <div className="container px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h2 className="font-serif font-bold text-3xl lg:text-4xl text-foreground">
@@ -114,7 +114,7 @@ export function CategoryBooks({ subject }: { subject: string }) {
           </p>
         </div>
 
-        <Carousel className="">
+        <Carousel className=" max-w-2xs mx-auto">
           <CarouselContent>
             {books.map((book) => (
               <CarouselItem key={book.key} className="sm:basis-1/2 lg:basis-1/3 xl:basis-1/4 py-4">
@@ -176,8 +176,8 @@ export function CategoryBooks({ subject }: { subject: string }) {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious />
-          <CarouselNext />
+            <CarouselPrevious />
+            <CarouselNext />
         </Carousel>
       </div>
     </section>
