@@ -299,7 +299,7 @@ export function FeaturedBooks() {
           </p>
         </div>
 
-        <Carousel className="mb-8 max-w-2xs mx-auto ">
+        <Carousel className="mb-8 max-w-2xs md:max-w-7xl mx-auto ">
           <CarouselContent>
             {featuredBooks.map((book) => (
               <CarouselItem key={book.key} className="sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">
